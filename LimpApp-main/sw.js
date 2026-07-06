@@ -3,10 +3,9 @@ const ASSETS = [
   './',
   './index.html',
   './style.css',
-  './app.js',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  './script.js',   // Corrigido de app.js para script.js
+  './dados.json',   // Adicionado para garantir o funcionamento offline da simulação
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
