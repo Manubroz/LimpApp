@@ -8,9 +8,9 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function carregarProdutosDoBanco() {
-    // Busca o arquivo JSON local ao invés da API local do Python
+    // Busca o arquivo JSON local de forma correta
     fetch("./dados.json")
-        .then(response => response.json() * { return response.json(); })
+        .then(response => response.json())
         .then(data => {
             bancoDeDados = data;
             const elA = document.getElementById("produtoA");
