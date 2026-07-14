@@ -41,72 +41,17 @@ function calcularMistura() {
 
     // Validações de estado de espera
     if (!pA && !pB) {
-        atualizarInterface("estado-espera", "🔬", "Aguardando Parâmetros", "Insira os dois compostos químicos no painel acima para iniciar o mapeamento molecular de riscos e reações.", []);
+        document.getElementById("resultadoMistura").style.display = "none";
         document.getElementById("dadosQuimicos").style.display = "none";
         return;
     }
 
     if (!pA || !pB) {
         let nomeSelecionado = pA ? elA.options[elA.selectedIndex].text : elB.options[elB.selectedIndex].text;
-        atualizarInterface("estado-espera", "⏳", "Aguardando 2º Produto", `Você pré-selecionou: ${nomeSelecionado}. Forneça o segundo composto para fechamento da análise.`, []);
-        document.getElementById("dadosQuimicos").style.display = "none";
+        document.getElementById("alertaTitulo").innerText = "Aguardando 2º Produto";
         return;
     }
 
-    const nomeA = elA.options[elA.selectedIndex].text;
-    const nomeB = elB.options[elB.selectedIndex].text;
-
-    // 1. ORDENAÇÃO DE CHAVES (O Pulo do Gato)
-    // Garante que "vinagre" + "agua_sanitaria" seja lido como "agua_sanitaria+vinagre"
-    let produtosOrdenados = [pA, pB].sort();
-    let chaveBusca = `${produtosOrdenados[0]}+${produtosOrdenados[1]}`;
-
-    // 2. BUSCA NO BANCO DE DADOS LOCAL (JSON)
-    // Assume-se que 'bancoDeDados' é a variável global onde o fetch() inicial guardou o JSON
-    let regra = bancoDeDados.regras[chaveBusca];
-    
-    // Busca os detalhes técnicos de cada produto
-    let infoA = bancoDeDados.produtos.find(p => p.id === pA);
-    let infoB = bancoDeDados.produtos.find(p => p.id === pB);
-
-    // Se não encontrar uma regra de perigo no JSON, define como seguro/neutro
-    if (!regra) {
-        regra = {
-            tipo: "seguro", // Pode criar uma classe CSS .seguro verde se quiser
-            icone: "✅",
-            titulo: "Nenhum risco severo documentado",
-            descricao: "Não há reações perigosas conhecidas para esta combinação no banco de dados.",
-            acao: "",
-            sintomas: "",
-            epis: ""
-        };
-    }
-
-    // 3. FORMATAÇÃO DOS DADOS PARA A INTERFACE
-    const dadosAFormatados = {
-        nomeForm: `${infoA.nome} (${infoA.formula || 'N/A'})`,
-        classe: infoA.classe,
-        ph: infoA.ph,
-        classePh: classificarPH(infoA.ph)
-    };
-
-    const dadosBFormatados = {
-        nomeForm: `${infoB.nome} (${infoB.formula || 'N/A'})`,
-        classe: infoB.classe,
-        ph: infoB.ph,
-        classePh: classificarPH(infoB.ph)
-    };
-
-    const listaEpis = regra.epis ? regra.epis.split(", ") : [];
-
-    // 4. ATUALIZAÇÃO DA TELA E HISTÓRICO
-    atualizarInterface(regra.tipo, regra.icone, regra.titulo, regra.descricao, listaEpis, dadosAFormatados, dadosBFormatados, regra.acao, regra.sintomas);
-    adicionarAoHistorico(nomeA, nomeB, regra.tipo, regra.titulo);
-    
-    // 5. ATUALIZAÇÃO DO LAUDO (Cópia e Áudio)
-    textoUltimoAlerta = `${regra.titulo}. ${regra.descricao}`;
-    laudoAtual = `🧪 LimpApp - Relatório Técnico de Compatibilidade\n\nReagentes:\n1. ${dadosAFormatados.nomeForm} [pH: ${infoA.ph}]\n2. ${dadosBFormatados.nomeForm} [pH: ${infoB.ph}]\n\n⚠️ Resultado: ${regra.titulo}\n🔬 Descrição: ${regra.descricao}\n🦠 Sintomas: ${regra.sintomas || "Nenhum"}\n🛡️ EPIs Recomendados: ${regra.epis || "Nenhum"}`;
-}
     if (!bancoDeDados) return;
 
     const prodDadosA = bancoDeDados.produtos.find(p => p.id === pA);
