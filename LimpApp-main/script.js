@@ -1,20 +1,29 @@
 let textoUltimoAlerta = "";
 let laudoAtual = "";
 let historicoTestes = [];
-let bancoDeDados = null; // Guardará as informações do dados.json
+let bancoDeDados = null;
 
-window.addEventListener("DOMContentLoaded", () => {
+// Garante a execução da função mesmo se o DOM já tiver sido carregado
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", carregarProdutosDoBanco);
+} else {
     carregarProdutosDoBanco();
-});
+}
 
 function carregarProdutosDoBanco() {
-    // Busca o arquivo JSON local de forma correta
     fetch("./dados.json")
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Não foi possível carregar o ficheiro dados.json");
+            }
+            return response.json();
+        })
         .then(data => {
             bancoDeDados = data;
             const elA = document.getElementById("produtoA");
             const elB = document.getElementById("produtoB");
+
+            if (!elA || !elB) return;
 
             const placeholder = '<option value="">Selecione um produto...</option>';
             elA.innerHTML = placeholder;
@@ -28,27 +37,24 @@ function carregarProdutosDoBanco() {
         })
         .catch(err => {
             console.error("Falha ao carregar os dados do LimpApp:", err);
-            document.getElementById("produtoA").innerHTML = '<option value="">Erro ao carregar os dados.</option>';
-            document.getElementById("produtoB").innerHTML = '<option value="">Erro ao carregar os dados.</option>';
+            const elA = document.getElementById("produtoA");
+            const elB = document.getElementById("produtoB");
+            if (elA) elA.innerHTML = '<option value="">Erro ao carregar os dados.</option>';
+            if (elB) elB.innerHTML = '<option value="">Erro ao carregar os dados.</option>';
         });
 }
 
 function calcularMistura() {
     const elA = document.getElementById("produtoA");
     const elB = document.getElementById("produtoB");
-    const pA = elA.value; // ID do produto selecionado
-    const pB = elB.value; // ID do produto selecionado
+    if (!elA || !elB) return;
 
-    // Validações de estado de espera
-    if (!pA && !pB) {
-        document.getElementById("resultadoMistura").style.display = "none";
-        document.getElementById("dadosQuimicos").style.display = "none";
-        return;
-    }
+    const pA = elA.value;
+    const pB = elB.value;
+    const containerResultado = document.getElementById("resultadoMistura");
 
     if (!pA || !pB) {
-        let nomeSelecionado = pA ? elA.options[elA.selectedIndex].text : elB.options[elB.selectedIndex].text;
-        document.getElementById("alertaTitulo").innerText = "Aguardando 2º Produto";
+        if (containerResultado) containerResultado.style.display = "none";
         return;
     }
 
@@ -60,15 +66,14 @@ function calcularMistura() {
     if (pA === pB) {
         exibirResultado({
             tipo: "seguro", icone: "✓", titulo: "Concentração de Reagente",
-            descricao: "Adicionar o mesmo produto altera apenas o volume final, sem colisão molecular anômala ou reação perigosa.",
-            sintomas: "Nenhum além da exposição padrão descrita no rótulo do fabricante.", 
+            descricao: "Adicionar o mesmo produto altera apenas o volume final, sem colisão molecular anómala.",
+            sintomas: "Nenhum além da exposição padrão descrita no rótulo.", 
             epis: "Luvas de Proteção", acao: "Uso convencional seguro.",
             dadosA: prodDadosA, dadosB: prodDadosB
         });
         return;
     }
 
-    // Ordena em ordem alfabética para bater com a chave do JSON (ex: "agua_sanitaria+vinagre")
     const chaveRegra = [pA, pB].sort().join("+");
     const regra = bancoDeDados.regras[chaveRegra];
 
@@ -81,7 +86,7 @@ function calcularMistura() {
     } else {
         exibirResultado({
             tipo: "seguro", icone: "✓", titulo: "Mistura sem Reatividade Crítica",
-            descricao: "Nenhum histórico de reação perigosa ou liberação de gases catalogado para esta combinação nas proporções domésticas.",
+            descricao: "Nenhum histórico de reação perigosa catalogado para esta combinação. Respeite as dosagens recomendadas.",
             sintomas: "Isento de sintomas toxicológicos agudos mapeados.", 
             epis: "Luvas de Proteção, Óculos de Proteção", acao: "Mantenha o ambiente ventilado por precaução.",
             dadosA: prodDadosA, dadosB: prodDadosB
@@ -91,29 +96,32 @@ function calcularMistura() {
 
 function exibirResultado(res) {
     const containerResultado = document.getElementById("resultadoMistura");
+    if (!containerResultado) return;
+
     containerResultado.className = `painel-resultado animar-alerta res-${res.tipo}`;
     containerResultado.style.display = "block";
 
-    // Atualiza os cards moleculares
-    document.getElementById("molA-nome").innerText = res.dadosA.nome;
-    document.getElementById("molA-formula").innerText = `Fórmula: ${res.dadosA.formula}`;
-    document.getElementById("molA-ph").innerText = `pH: ${res.dadosA.ph} (${res.dadosA.classe})`;
+    const setTxt = (id, txt) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = txt;
+    };
 
-    document.getElementById("molB-nome").innerText = res.dadosB.nome;
-    document.getElementById("molB-formula").innerText = `Fórmula: ${res.dadosB.formula}`;
-    document.getElementById("molB-ph").innerText = `pH: ${res.dadosB.ph} (${res.dadosB.classe})`;
+    setTxt("molA-nome", res.dadosA.nome);
+    setTxt("molA-formula", `Fórmula: ${res.dadosA.formula}`);
+    setTxt("molA-ph", `pH: ${res.dadosA.ph} (${res.dadosA.classe})`);
 
-    // Alerta Central
-    document.getElementById("alertaIcone").innerText = res.icone;
-    document.getElementById("alertaTitulo").innerText = res.titulo;
-    document.getElementById("alertaDescricao").innerText = res.descricao;
+    setTxt("molB-nome", res.dadosB.nome);
+    setTxt("molB-formula", `Fórmula: ${res.dadosB.formula}`);
+    setTxt("molB-ph", `pH: ${res.dadosB.ph} (${res.dadosB.classe})`);
 
-    // Fichas Clínicas e Clínico-Preventivas
-    document.getElementById("txtSintomas").innerText = res.sintomas || "Nenhum relatado.";
-    document.getElementById("txtEpis").innerText = res.epis || "Nenhum específico.";
-    document.getElementById("txtAcao").innerText = res.acao || "Nenhuma ação crítica necessária.";
+    setTxt("alertaIcone", res.icone);
+    setTxt("alertaTitulo", res.titulo);
+    setTxt("alertaDescricao", res.descricao);
 
-    // Lógica de áudio e cópia de laudo
+    setTxt("txtSintomas", res.sintomas || "Nenhum relatado.");
+    setTxt("txtEpis", res.epis || "Nenhum específico.");
+    setTxt("txtAcao", res.acao || "Nenhuma ação crítica necessária.");
+
     textoUltimoAlerta = `Atenção: Mistura classificada como ${res.tipo}. ${res.titulo}. ${res.descricao}`;
     laudoAtual = `=== LAUDO DE COMPATIBILIDADE QUÍMICA - LIMPAPP ===\nComponente 1: ${res.dadosA.nome}\nComponente 2: ${res.dadosB.nome}\nClassificação: ${res.tipo.toUpperCase()}\nDiagnóstico: ${res.titulo}\nEfeitos: ${res.sintomas}`;
 
@@ -122,6 +130,8 @@ function exibirResultado(res) {
 
 function adicionarAoHistorico(prodA, prodB, titulo, tipo) {
     const lista = document.getElementById("listaHistorico");
+    if (!lista) return;
+
     const vazio = lista.querySelector(".historico-vazio");
     if (vazio) vazio.remove();
 
@@ -133,8 +143,10 @@ function adicionarAoHistorico(prodA, prodB, titulo, tipo) {
 }
 
 function resetarSimulador() {
-    document.getElementById("produtoA").value = "";
-    document.getElementById("produtoB").value = "";
+    const elA = document.getElementById("produtoA");
+    const elB = document.getElementById("produtoB");
+    if (elA) elA.value = "";
+    if (elB) elB.value = "";
     calcularMistura();
 }
 
