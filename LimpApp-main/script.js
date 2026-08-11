@@ -118,20 +118,28 @@ if (document.readyState === "loading") {
     carregarProdutosDoBanco();
 }
 
+// Remova qualquer fetch() que tenha sobrado e use apenas isto:
 function carregarProdutosDoBanco() {
-    // Injetando os dados diretamente na variável para evitar o bloqueio de CORS do fetch
-    bancoDeDados = {
-      "produtos": [
-        { "id": "agua_sanitaria", "nome": "Água Sanitária (Hipoclorito de Sódio)", "formula": "NaClO", "classe": "Alcalino / Oxidante", "ph": 12.0 },
-        { "id": "vinagre", "nome": "Vinagre (Ácido Acético)", "formula": "CH3COOH", "classe": "Ácido Fraco", "ph": 2.5 },
-        { "id": "amonia", "nome": "Amoníaco / Amônia", "formula": "NH3", "classe": "Base Fraca", "ph": 11.5 },
-        { "id": "alcool", "nome": "Álcool Comum (Etanol)", "formula": "C2H5OH", "classe": "Neutro / Solvente", "ph": 7.0 },
-        { "id": "acido_muriatico", "nome": "Ácido Muriático / Clorídrico", "formula": "HCl", "classe": "Ácido Forte", "ph": 1.0 }
-      ],
-      "regras": { 
-          // Cole aqui todo o bloco "regras" que você tem no seu arquivo dados.json!
-      } 
-    };
+    const elA = document.getElementById("produtoA");
+    const elB = document.getElementById("produtoB");
+
+    // Se os elementos não existirem na tela, para por aqui
+    if (!elA || !elB) return;
+
+    const placeholder = '<option value="">Selecione um produto...</option>';
+    elA.innerHTML = placeholder;
+    elB.innerHTML = placeholder;
+
+    // Puxa direto da variável bancoDeDados que você criou no topo do script
+    bancoDeDados.produtos.forEach(p => {
+        const opt = `<option value="${p.id}">${p.nome}</option>`;
+        elA.innerHTML += opt;
+        elB.innerHTML += opt;
+    });
+}
+
+// Garante que a função rode assim que a página carregar
+window.addEventListener("DOMContentLoaded", carregarProdutosDoBanco);
 
     const elA = document.getElementById("produtoA");
     const elB = document.getElementById("produtoB");
@@ -147,7 +155,7 @@ function carregarProdutosDoBanco() {
         elA.innerHTML += opt;
         elB.innerHTML += opt;
     });
-}
+
 
 // Busca a regra em qualquer direção (produtoA + produtoB OU produtoB + produtoA)
 function buscarRegra(pA, pB) {
