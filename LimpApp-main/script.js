@@ -1,4 +1,4 @@
-// 0. Desativa Service Workers antigos para garantir que o navegador carregue o novo código imediatamente
+// Desativa qualquer cache antigo do navegador
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for(let registration of registrations) {
@@ -11,7 +11,6 @@ let textoUltimoAlerta = "";
 let laudoAtual = "";
 let historicoTestes = [];
 
-// 1. BANCO DE DADOS EXPANDIDO (12 Produtos e Múltiplas Regras de Incompatibilidade)
 const bancoDeDados = {
   "produtos": [
     { "id": "agua_sanitaria", "nome": "Água Sanitária (Hipoclorito de Sódio)", "formula": "NaClO", "classe": "Alcalino / Oxidante", "ph": 12.0 },
@@ -52,7 +51,7 @@ const bancoDeDados = {
       "epis": "Luvas, óculos de proteção e ambiente ventilado.",
       "acao": "Lave a pele exposta com água corrente por 15 minutos e vá para local arejado."
     },
-    "agua_sanitaria+acido_muriatico": {
+    "acido_muriatico+agua_sanitaria": {
       "tipo": "perigo", "icone": "☠️",
       "titulo": "Reação Violenta com Gás Cloro Massivo",
       "descricao": "O ácido forte reage violentamente com a água sanitária, liberando grandes volumes de gás cloro perigoso.",
@@ -60,7 +59,7 @@ const bancoDeDados = {
       "epis": "Respirador autônomo, macacão impermeável, óculos e luvas reforçadas.",
       "acao": "Abandone o recinto imediatamente. Ligue para os Bombeiros (193)."
     },
-    "agua_sanitaria+agua_oxigenada": {
+    "agua_oxigenada+agua_sanitaria": {
       "tipo": "perigo", "icone": "🔥",
       "titulo": "Liberação Exotérmica de Oxigênio Gasoso",
       "descricao": "Reação exotérmica rápida que produz gás oxigênio puro (O2), podendo gerar projeções quentes e risco de incêndio.",
@@ -68,7 +67,7 @@ const bancoDeDados = {
       "epis": "Protetor facial, luvas térmicas e avental impermeável.",
       "acao": "Afaste materiais inflamáveis e resfrie o recipiente com água se for seguro."
     },
-    "vinagre+bicarb_sodio": {
+    "bicarb_sodio+vinagre": {
       "tipo": "atencao", "icone": "⚠️",
       "titulo": "Neutralização Acidobásica com Efervescência",
       "descricao": "O ácido acético reage com o bicarbonato anulando o efeito de ambos e liberando CO2. Não é tóxico, mas anula a eficácia de limpeza.",
@@ -76,7 +75,7 @@ const bancoDeDados = {
       "epis": "Óculos de proteção contra respingos.",
       "acao": "Não misture em recipientes fechados para evitar acúmulo de pressão."
     },
-    "vinagre+agua_oxigenada": {
+    "agua_oxigenada+vinagre": {
       "tipo": "perigo", "icone": "☣️",
       "titulo": "Formação de Ácido Peracético (Corrosivo)",
       "descricao": "Forma ácido peracético em alta concentração, substância altamente corrosiva para a pele, olhos e sistema respiratório.",
@@ -84,7 +83,7 @@ const bancoDeDados = {
       "epis": "Luvas de nitrila, óculos de segurança contra respingos.",
       "acao": "Lave a área atingida com bastante água corrente e consulte orientação médica."
     },
-    "soda_caustica+acido_muriatico": {
+    "acido_muriatico+soda_caustica": {
       "tipo": "perigo", "icone": "💥",
       "titulo": "Reação Extremamente Exotérmica (Violenta)",
       "descricao": "Reação de neutralização forte entre ácido forte e base forte, liberando calor intenso capaz de ferver a água e projetar líquido corrosivo.",
@@ -92,7 +91,7 @@ const bancoDeDados = {
       "epis": "Protetor facial, luvas de borracha nitrílica espessas e avental de PVC.",
       "acao": "Lave a pele com água abundante por no mínimo 15 minutos e busque socorro médico."
     },
-    "limpa_vidros+agua_sanitaria": {
+    "agua_sanitaria+limpa_vidros": {
       "tipo": "perigo", "icone": "💥",
       "titulo": "Formação de Cloraminas e Vapores Irritantes",
       "descricao": "Como a maioria dos limpa-vidros contém amônia em sua composição, a mistura com água sanitária gera cloraminas tóxicas.",
@@ -111,26 +110,18 @@ const bancoDeDados = {
   }
 };
 
-// 2. INICIALIZAÇÃO
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", carregarProdutosDoBanco);
-} else {
-    carregarProdutosDoBanco();
-}
+window.addEventListener("DOMContentLoaded", carregarProdutosDoBanco);
 
-// Remova qualquer fetch() que tenha sobrado e use apenas isto:
 function carregarProdutosDoBanco() {
     const elA = document.getElementById("produtoA");
     const elB = document.getElementById("produtoB");
 
-    // Se os elementos não existirem na tela, para por aqui
     if (!elA || !elB) return;
 
     const placeholder = '<option value="">Selecione um produto...</option>';
     elA.innerHTML = placeholder;
     elB.innerHTML = placeholder;
 
-    // Puxa direto da variável bancoDeDados que você criou no topo do script
     bancoDeDados.produtos.forEach(p => {
         const opt = `<option value="${p.id}">${p.nome}</option>`;
         elA.innerHTML += opt;
@@ -138,26 +129,6 @@ function carregarProdutosDoBanco() {
     });
 }
 
-// Garante que a função rode assim que a página carregar
-window.addEventListener("DOMContentLoaded", carregarProdutosDoBanco);
-
-    const elA = document.getElementById("produtoA");
-    const elB = document.getElementById("produtoB");
-
-    if (!elA || !elB) return;
-
-    const placeholder = '<option value="">Selecione um produto...</option>';
-    elA.innerHTML = placeholder;
-    elB.innerHTML = placeholder;
-
-    bancoDeDados.produtos.forEach(p => {
-        const opt = `<option value="${p.id}">${p.nome}</option>`;
-        elA.innerHTML += opt;
-        elB.innerHTML += opt;
-    });
-
-
-// Busca a regra em qualquer direção (produtoA + produtoB OU produtoB + produtoA)
 function buscarRegra(pA, pB) {
     if (!bancoDeDados || !bancoDeDados.regras) return null;
     const k1 = `${pA}+${pB}`;
