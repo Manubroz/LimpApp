@@ -1,9 +1,48 @@
 let textoUltimoAlerta = "";
 let laudoAtual = "";
 let historicoTestes = [];
-let bancoDeDados = null;
 
-// Garante a execução da função mesmo se o DOM já tiver sido carregado
+// 1. DADOS EMBUTIDOS: Sem depender de ficheiros externos!
+const bancoDeDados = {
+  "produtos": [
+    { "id": "agua_sanitaria", "nome": "Água Sanitária (Hipoclorito de Sódio)", "formula": "NaClO", "classe": "Alcalino / Oxidante", "ph": 12.0 },
+    { "id": "vinagre", "nome": "Vinagre (Ácido Acético)", "formula": "CH3COOH", "classe": "Ácido Fraco", "ph": 2.5 },
+    { "id": "amonia", "nome": "Amoníaco / Amônia", "formula": "NH3", "classe": "Base Fraca", "ph": 11.5 },
+    { "id": "alcool", "nome": "Álcool Comum (Etanol)", "formula": "C2H5OH", "classe": "Neutro / Solvente", "ph": 7.0 },
+    { "id": "acido_muriatico", "nome": "Ácido Muriático / Clorídrico", "formula": "HCl", "classe": "Ácido Forte", "ph": 1.0 }
+  ],
+  "regras": {
+    "agua_sanitaria+vinagre": {
+      "tipo": "perigo",
+      "icone": "☣️",
+      "titulo": "Liberação de Gás Cloro (Altamente Tóxico)",
+      "descricao": "A mistura de hipoclorito de sódio com ácidos libera o gás cloro (Cl2), que reage com a umidade das vias aéreas formando ácidos corrosivos.",
+      "sintomas": "Tosse severa, ardência nos olhos, falta de ar e queimaduras químicas no trato respiratório.",
+      "epis": "Máscara de proteção respiratória, óculos de segurança e luvas.",
+      "acao": "Evacue o local imediatamente, abra as janelas para ventilação e não respire os gases."
+    },
+    "agua_sanitaria+amonia": {
+      "tipo": "perigo",
+      "icone": "💥",
+      "titulo": "Formação de Cloraminas Tóxicas e Explosivas",
+      "descricao": "A reação produz monocloramina e dicloramina, gases altamente irritantes e potencialmente explosivos em concentrações elevadas.",
+      "sintomas": "Irritação ocular imediata, dor no peito, náuseas e dor de cabeça intensa.",
+      "epis": "Máscara de proteção, óculos e luvas de nitrila.",
+      "acao": "Saia do ambiente para respirar ar fresco. Em caso de tontura, ligue para o SAMU (192)."
+    },
+    "agua_sanitaria+alcool": {
+      "tipo": "perigo",
+      "icone": "🧪",
+      "titulo": "Produção de Clorofórmio e Compostos Tóxicos",
+      "descricao": "A reação entre o hipoclorito e o etanol gera clorofórmio (substância anestésica e tóxica para fígado/rins) e ácido clorídrico.",
+      "sintomas": "Tontura, dor de cabeça, perda de consciência e irritação na pele.",
+      "epis": "Luvas, óculos de proteção e ambiente amplamente ventilado.",
+      "acao": "Lave a pele exposta com água corrente por 15 minutos e vá para um local arejado."
+    }
+  }
+};
+
+// 2. INICIALIZAÇÃO IMEDIATA (Sem falhas de carregamento)
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", carregarProdutosDoBanco);
 } else {
@@ -11,37 +50,21 @@ if (document.readyState === "loading") {
 }
 
 function carregarProdutosDoBanco() {
-    fetch("./dados.json")
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Não foi possível carregar o ficheiro dados.json");
-            }
-            return response.json();
-        })
-        .then(data => {
-            bancoDeDados = data;
-            const elA = document.getElementById("produtoA");
-            const elB = document.getElementById("produtoB");
+    const elA = document.getElementById("produtoA");
+    const elB = document.getElementById("produtoB");
 
-            if (!elA || !elB) return;
+    if (!elA || !elB) return;
 
-            const placeholder = '<option value="">Selecione um produto...</option>';
-            elA.innerHTML = placeholder;
-            elB.innerHTML = placeholder;
+    const placeholder = '<option value="">Selecione um produto...</option>';
+    elA.innerHTML = placeholder;
+    elB.innerHTML = placeholder;
 
-            data.produtos.forEach(p => {
-                const opt = `<option value="${p.id}">${p.nome}</option>`;
-                elA.innerHTML += opt;
-                elB.innerHTML += opt;
-            });
-        })
-        .catch(err => {
-            console.error("Falha ao carregar os dados do LimpApp:", err);
-            const elA = document.getElementById("produtoA");
-            const elB = document.getElementById("produtoB");
-            if (elA) elA.innerHTML = '<option value="">Erro ao carregar os dados.</option>';
-            if (elB) elB.innerHTML = '<option value="">Erro ao carregar os dados.</option>';
-        });
+    // Puxa os dados diretamente da variável "bancoDeDados" criada acima
+    bancoDeDados.produtos.forEach(p => {
+        const opt = `<option value="${p.id}">${p.nome}</option>`;
+        elA.innerHTML += opt;
+        elB.innerHTML += opt;
+    });
 }
 
 function calcularMistura() {
@@ -58,15 +81,13 @@ function calcularMistura() {
         return;
     }
 
-    if (!bancoDeDados) return;
-
     const prodDadosA = bancoDeDados.produtos.find(p => p.id === pA);
     const prodDadosB = bancoDeDados.produtos.find(p => p.id === pB);
 
     if (pA === pB) {
         exibirResultado({
             tipo: "seguro", icone: "✓", titulo: "Concentração de Reagente",
-            descricao: "Adicionar o mesmo produto altera apenas o volume final, sem colisão molecular anómala.",
+            descricao: "Adicionar o mesmo produto altera apenas o volume final, sem colisão molecular anômala.",
             sintomas: "Nenhum além da exposição padrão descrita no rótulo.", 
             epis: "Luvas de Proteção", acao: "Uso convencional seguro.",
             dadosA: prodDadosA, dadosB: prodDadosB
