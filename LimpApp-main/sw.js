@@ -1,4 +1,4 @@
-const CACHE_NAME = 'limpapp-v3';
+const CACHE_NAME = 'limpapp-v4';
 const ASSETS = [
   './',
   './index.html',
